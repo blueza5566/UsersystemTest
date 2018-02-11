@@ -49,7 +49,7 @@ public class Filemanager extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.setType("*/*");
+                intent.setType("file/*");
                 startActivityForResult(Intent.createChooser(intent,"Select File"),0);
                 Query query = db.orderByKey().startAt("1001");
                 query.addListenerForSingleValueEvent(new ValueEventListener() {
