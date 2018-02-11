@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -23,15 +24,19 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Vector;
 
 public class Filemanager extends AppCompatActivity {
+
 
     StorageReference storage;
     DatabaseReference db;
     FirebaseStorage fbs;
     FirebaseDatabase fb;
     LinearLayout layout;
+    int round;
+    ArrayList<FileDetail> file;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +48,107 @@ public class Filemanager extends AppCompatActivity {
         storage = fbs.getReferenceFromUrl("gs://project-final-dd369.appspot.com");
         layout = (LinearLayout) findViewById(R.id.layout);
         final GlobalClass globaldata = (GlobalClass) getApplicationContext();
+        Queryfilecount();
+        newButton();
+    }
+
+
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        final GlobalClass globaldata = (GlobalClass) getApplicationContext();
+        if(resultCode == RESULT_OK){
+            if(requestCode == 0){
+                Uri selectedUri_File = data.getData();
+                java.io.File myfile = new java.io.File(selectedUri_File.toString());
+                String Selectedfile = myfile.getAbsolutePath();
+                //Toast.makeText(this,Selectedfile,Toast.LENGTH_SHORT).show();
+                StorageReference riversRef = storage.child(globaldata.userid+"/"+myfile.getName());
+                riversRef.putFile(selectedUri_File).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        @SuppressWarnings("VisibleForTests") Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                        //Toast.makeText(Filemanager.this,"555 "+downloadUrl.toString(),Toast.LENGTH_SHORT).show();
+                        File filelo = new File(downloadUrl.getLastPathSegment().toString());
+                        String filename = filelo.getName();
+                        //file = new FileTest(filename,downloadUrl.toString());
+                        globaldata.getFileList().add(new FileDetail(filename,downloadUrl.toString()));
+                        String Username = globaldata.getList().get(0).getUsername();
+                        String Password = globaldata.getList().get(0).getPassword();
+                        db.child("user").child(globaldata.userid).setValue(new User(Username,Password,globaldata.getFileList()));
+                        Intent intent = new Intent(Filemanager.this,Filemanager.class);
+                        startActivity(intent);
+                        finish();
+                    }
+                })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText(Filemanager.this,"Error",Toast.LENGTH_SHORT).show();
+                            }
+                        });
+            }
+        }
+    }
+
+    public  void Queryfilecount(){
+        final GlobalClass globaldata = (GlobalClass) getApplicationContext();
+        round = 0;
+        Query query =db.child("user").child(globaldata.getUserid()).child("fileDetails").orderByKey();
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                for(DataSnapshot ds : dataSnapshot.getChildren()){
+                    round++;
+                }
+                getfilelist();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+
+    public void getfilelist(){
+        final GlobalClass globaldata = (GlobalClass) getApplicationContext();
+        globaldata.getFileList().removeAllElements();
+        db = fb.getInstance().getReferenceFromUrl("https://project-final-dd369.firebaseio.com/");
+        for(int i = 0 ; i <round ; i++) {
+            Query query = db.child("user").child(globaldata.getUserid()).child("fileDetails").child(""+0).orderByKey();
+            query.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    String filename = "";
+                    String filelocal = "";
+                    for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                       if(ds.getKey().equals("filename")) {
+                           TextView txt2 = new TextView(Filemanager.this);
+                           txt2.setText("" + ds.getValue());
+                           layout.addView(txt2);
+                           filename =""+ ds.getValue();
+                       }
+                       else {
+                           filelocal = ""+ ds.getValue();
+                       }
+                    }
+                    globaldata.getFileList().add(new FileDetail(filename,filelocal));
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+
+        }
+    }
+
+    public void newButton(){
         Button btn3 = new Button(this);
         btn3.setText("Select File");
         btn3.setOnClickListener(new View.OnClickListener() {
@@ -72,40 +178,11 @@ public class Filemanager extends AppCompatActivity {
         layout.addView(btn3);
     }
 
-
-
-
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        final GlobalClass globaldata = (GlobalClass) getApplicationContext();
-        if(resultCode == RESULT_OK){
-            if(requestCode == 0){
-                Uri selectedUri_File = data.getData();
-                java.io.File myfile = new java.io.File(selectedUri_File.toString());
-                String Selectedfile = myfile.getAbsolutePath();
-                //Toast.makeText(this,Selectedfile,Toast.LENGTH_SHORT).show();
-                StorageReference riversRef = storage.child(globaldata.userid+"/"+myfile.getName());
-                riversRef.putFile(selectedUri_File).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        @SuppressWarnings("VisibleForTests") Uri downloadUrl = taskSnapshot.getDownloadUrl();
-                        //Toast.makeText(Filemanager.this,"555 "+downloadUrl.toString(),Toast.LENGTH_SHORT).show();
-                        File filelo = new File(downloadUrl.getLastPathSegment().toString());
-                        String filename = filelo.getName();
-                        //file = new FileTest(filename,downloadUrl.toString());
-                        globaldata.getFileList().add(new FileDetail(filename,downloadUrl.toString()));
-                        globaldata.getList().get(0).setFileDetails(globaldata.getFileList());
-                        db.child("user").child(globaldata.userid).setValue(globaldata.getList());
-                    }
-                })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(Filemanager.this,"Error",Toast.LENGTH_SHORT).show();
-                            }
-                        });
-            }
-        }
+    protected void onResume() {
+        super.onResume();
+        layout.removeAllViews();
+        getfilelist();
+        newButton();
     }
 }
