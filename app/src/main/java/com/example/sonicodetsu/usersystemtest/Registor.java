@@ -42,7 +42,7 @@ public class Registor extends AppCompatActivity {
                         for (DataSnapshot ds : dataSnapshot.getChildren()) {
                             a++;
                         }
-                        db.child("user").child(""+a).setValue(new User(password.getText().toString(),user.getText().toString()));
+                        db.child("user").child(""+a).setValue(new User(user.getText().toString(),password.getText().toString()));
                         finish();
                     }
 

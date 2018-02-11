@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
     Button re;
     String user = "";
     String pass = "";
-    ArrayList<User> userlist = new ArrayList<User>();
+    ArrayList<User> userlist;
     int round = 0;
 
     @Override
@@ -53,7 +53,6 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 int check = 0;
                 int userid = 1001;
-                Toast.makeText(MainActivity.this,""+userlist.size(),Toast.LENGTH_SHORT).show();
                 for (User u : userlist){
                     if(u.getUsername().equals(username.getText().toString()) && u.getPassword().equals(password.getText().toString())){
                         check = 1;
@@ -83,25 +82,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Query query = db.child("user").orderByKey();
-        query.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                for(DataSnapshot ds : dataSnapshot.getChildren()){
-                    round++;
-                }
-                QueryUserlist();
-            }
+        QueryUsercount();
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
 
     }
 
     public  void QueryUserlist(){
+        userlist = new ArrayList<User>();
         for (int i =0; i < round  ; i++){
             Query query2 = db.child("user").child("100"+(i+1)).orderByKey();
             query2.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -124,5 +111,30 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    public  void QueryUsercount(){
+        round = 0;
+        Query query = db.child("user").orderByKey();
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                for(DataSnapshot ds : dataSnapshot.getChildren()){
+                    round++;
+                }
+                QueryUserlist();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        QueryUsercount();
     }
 }

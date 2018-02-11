@@ -85,17 +85,18 @@ public class Filemanager extends AppCompatActivity {
                 java.io.File myfile = new java.io.File(selectedUri_File.toString());
                 String Selectedfile = myfile.getAbsolutePath();
                 //Toast.makeText(this,Selectedfile,Toast.LENGTH_SHORT).show();
-                StorageReference riversRef = storage.child("test/test.txt");
+                StorageReference riversRef = storage.child(globaldata.userid+"/"+myfile.getName());
                 riversRef.putFile(selectedUri_File).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
                     public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                         @SuppressWarnings("VisibleForTests") Uri downloadUrl = taskSnapshot.getDownloadUrl();
-                        Toast.makeText(Filemanager.this,"555 "+downloadUrl.toString(),Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(Filemanager.this,"555 "+downloadUrl.toString(),Toast.LENGTH_SHORT).show();
                         File filelo = new File(downloadUrl.getLastPathSegment().toString());
                         String filename = filelo.getName();
                         //file = new FileTest(filename,downloadUrl.toString());
                         globaldata.getFileList().add(new FileDetail(filename,downloadUrl.toString()));
-                        db.child("User").child(globaldata.userid).setValue(globaldata.getFileList());
+                        globaldata.getList().get(0).setFileDetails(globaldata.getFileList());
+                        db.child("user").child(globaldata.userid).setValue(globaldata.getList());
                     }
                 })
                         .addOnFailureListener(new OnFailureListener() {
