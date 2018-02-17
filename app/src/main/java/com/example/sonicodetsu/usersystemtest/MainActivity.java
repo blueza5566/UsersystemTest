@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     String pass = "";
     ArrayList<User> userlist;
     int round = 0;
+    Filemanager fm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
