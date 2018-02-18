@@ -1,0 +1,99 @@
+{
+  "project_info": {
+    "project_number": "444710209742",
+    "firebase_url": "https://project-final-dd369.firebaseio.com",
+    "project_id": "project-final-dd369",
+    "storage_bucket": "project-final-dd369.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:444710209742:android:72e910c6f0b819e4",
+        "android_client_info": {
+          "package_name": "com.example.sonicodetsu.project_final"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "444710209742-vt641jknh8e7776hl29f7n9tp47komet.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.sonicodetsu.project_final",
+            "certificate_hash": "579e19c1fcd1f9d251fb6e3ff2b2b6ab581fd344"
+          }
+        },
+        {
+          "client_id": "444710209742-r5u4fim8ivf6osr5kp2ue2efn567iiv7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_QsFlOYLtDsjcj448JGMXAvGdSBNnqJU"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "444710209742-r5u4fim8ivf6osr5kp2ue2efn567iiv7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:444710209742:android:cbcca0bdffcc50f6",
+        "android_client_info": {
+          "package_name": "com.example.sonicodetsu.usersystemtest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "444710209742-lvdq4vr8l6kqmmie4sro6mbhu752jd01.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.sonicodetsu.usersystemtest",
+            "certificate_hash": "579e19c1fcd1f9d251fb6e3ff2b2b6ab581fd344"
+          }
+        },
+        {
+          "client_id": "444710209742-r5u4fim8ivf6osr5kp2ue2efn567iiv7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_QsFlOYLtDsjcj448JGMXAvGdSBNnqJU"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "444710209742-r5u4fim8ivf6osr5kp2ue2efn567iiv7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
