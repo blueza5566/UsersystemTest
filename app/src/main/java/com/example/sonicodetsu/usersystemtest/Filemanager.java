@@ -21,6 +21,7 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.stats.StatsEvent;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -55,11 +56,11 @@ public class Filemanager extends AppCompatActivity {
     FirebaseStorage fbs;
     FirebaseDatabase fb;
     int round;
-    ArrayList<FileDetail> file;
     TableLayout tb;
     TableRow tr;
     LinearLayout layout2;
     int Folderupload = 0;
+    int FolderDelete = 0;
     ArrayList<String> Foldername = new ArrayList<>();
     int Foldercount = 0;
     String newFolder = "";
@@ -67,6 +68,7 @@ public class Filemanager extends AppCompatActivity {
     FirebaseAuth mAuth;
     String Folderlo;
     StorageReference riversRe;
+    int deletechecker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -214,54 +216,171 @@ public class Filemanager extends AppCompatActivity {
             layout2.setOrientation(LinearLayout.VERTICAL);
             String testfile [] = f.getFilename().split("/");
             String testfile2 [] = f.getFilename().split("\\.");
+            String testfile3 = "";
             img.setId(k);
-            if(testfile.length == (s2 + ff)  && !testfile[(s0+ff)].equals(fdtest)&& Foldercount == (s0+ff)){
-                filename.setText(testfile[(s0+ff)]);
-                fdtest = testfile[(s0+ff)];
-                img.setImageResource(R.drawable.folder);
-                img.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                    int i = img.getId();
-                    onOpen(i);
-                    }
-                });
-                /*img.setOnLongClickListener(new View.OnLongClickListener() {
-                    @Override
-                    public boolean onLongClick(View v) {
-                        final String selector [] = {"open","delete"};
-                        AlertDialog.Builder builder = new AlertDialog.Builder(Filemanager.this);
-                        builder.setTitle("Select Favorite Team");
-                        builder.setItems(selector, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                String selected = selector[which];
-                            }
-                        });
-                        builder.setNegativeButton("cancle", null);
-                        builder.create();
-                        builder.show();
-                        return false;
-                    }
-                });*/
-            }
-            else if(testfile2.length == 2 && Foldercount == (s0+ff) && testfile.length == (s1+ff)){
-                String filetype [] = testfile[testfile.length-1].split("\\.");
-                if(Foldercount == 0){
-                    filename.setText(f.getFilename());
+            if(Foldercount > 0){
+                testfile3 = Foldername.get(Foldercount-1);
+                if(testfile.length == (s2 + ff)  && !testfile[(s0+ff)].equals(fdtest)&& Foldercount == (s0+ff) && testfile[ff-1].equalsIgnoreCase(testfile3)){
+                    filename.setText(testfile[(s0+ff)]);
+                    fdtest = testfile[(s0+ff)];
+                    img.setImageResource(R.drawable.folder);
+                    img.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            int i = img.getId();
+                            onOpen(i);
+                        }
+                    });
+                    img.setOnLongClickListener(new View.OnLongClickListener() {
+                        @Override
+                        public boolean onLongClick(View v) {
+                            final String selector [] = {"Open","delete"};
+                            AlertDialog.Builder builder = new AlertDialog.Builder(Filemanager.this);
+                            builder.setTitle("Select what to Do");
+                            builder.setItems(selector, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    int i = img.getId();
+                                    FolderDelete = 1;
+                                    switch (which){
+                                        case 0: onOpen(i);break;
+                                        case 1: onDelete(i);break;
+                                    }
+
+                                }
+                            });
+                            builder.setNegativeButton("cancel", null);
+                            builder.create();
+                            builder.show();
+                            return false;
+                        }
+                    });
                 }
-                else{
-                    filename.setText(testfile[testfile.length-1]);
-                }
-                img.setImageResource(R.drawable.file);
-                img.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        int i = img.getId();
-                        onOpen(i);
+                else if(testfile2.length == 2 && Foldercount == (s0+ff) && testfile.length == (s1+ff) && testfile[ff-1].equalsIgnoreCase(testfile3)){
+                    String filetype [] = testfile[testfile.length-1].split("\\.");
+                    if(Foldercount == 0){
+                        filename.setText(f.getFilename());
                     }
-                });
+                    else{
+                        filename.setText(testfile[testfile.length-1]);
+                    }
+                    img.setImageResource(R.drawable.file);
+                    img.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            int i = img.getId();
+                            onOpen(i);
+                        }
+                    });
+                    img.setOnLongClickListener(new View.OnLongClickListener() {
+                        @Override
+                        public boolean onLongClick(View v) {
+                            final String selector [] = {"download","delete"};
+                            AlertDialog.Builder builder = new AlertDialog.Builder(Filemanager.this);
+                            builder.setTitle("Select what to Do");
+                            builder.setItems(selector, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    int i = img.getId();
+                                    switch (which){
+                                        case 0: onOpen(i);break;
+                                        case 1: onDelete(i);break;
+                                    }
+
+                                }
+                            });
+                            builder.setNegativeButton("cancel", null);
+                            builder.create();
+                            builder.show();
+                            return false;
+                        }
+                    });
+                }
             }
+            else {
+                if (testfile.length == (s2 + ff) && !testfile[(s0 + ff)].equals(fdtest) && Foldercount == (s0 + ff)) {
+                    filename.setText(testfile[(s0 + ff)]);
+                    fdtest = testfile[(s0 + ff)];
+                    img.setImageResource(R.drawable.folder);
+                    img.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            int i = img.getId();
+                            onOpen(i);
+                        }
+                    });
+                    img.setOnLongClickListener(new View.OnLongClickListener() {
+                        @Override
+                        public boolean onLongClick(View v) {
+                            final String selector[] = {"Open", "delete"};
+                            AlertDialog.Builder builder = new AlertDialog.Builder(Filemanager.this);
+                            builder.setTitle("Select what to Do");
+                            builder.setItems(selector, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    int i = img.getId();
+                                    FolderDelete = 1;
+                                    switch (which) {
+                                        case 0:
+                                            onOpen(i);
+                                            break;
+                                        case 1:
+                                            onDelete(i);
+                                            break;
+                                    }
+
+                                }
+                            });
+                            builder.setNegativeButton("cancel", null);
+                            builder.create();
+                            builder.show();
+                            return false;
+                        }
+                    });
+                }
+
+                else if(testfile2.length == 2 && Foldercount == (s0+ff) && testfile.length == (s1+ff)){
+                    String filetype [] = testfile[testfile.length-1].split("\\.");
+                    if(Foldercount == 0){
+                        filename.setText(f.getFilename());
+                    }
+                    else{
+                        filename.setText(testfile[testfile.length-1]);
+                    }
+                    img.setImageResource(R.drawable.file);
+                    img.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            int i = img.getId();
+                            onOpen(i);
+                        }
+                    });
+                    img.setOnLongClickListener(new View.OnLongClickListener() {
+                        @Override
+                        public boolean onLongClick(View v) {
+                            final String selector [] = {"download","delete"};
+                            AlertDialog.Builder builder = new AlertDialog.Builder(Filemanager.this);
+                            builder.setTitle("Select what to Do");
+                            builder.setItems(selector, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    int i = img.getId();
+                                    switch (which){
+                                        case 0: onOpen(i);break;
+                                        case 1: onDelete(i);break;
+                                    }
+
+                                }
+                            });
+                            builder.setNegativeButton("cancel", null);
+                            builder.create();
+                            builder.show();
+                            return false;
+                        }
+                    });
+                }
+            }
+
            /* else if(testfile.length == 2 && testfile2.length == 2 && Foldercount == 1){
                 String filetype [] = testfile[testfile.length-1].split("\\.");
                 filename.setText(testfile[testfile.length-1]);
@@ -516,7 +635,7 @@ public class Filemanager extends AppCompatActivity {
         //Toast.makeText(this,name,Toast.LENGTH_SHORT).show();
         String testfile [] = name.split("/");
         if(testfile.length > 1){
-            Foldername.add(testfile [0]);
+            Foldername.add(testfile [0+Foldercount]);
             Foldercount++;
             Queryfilecount();
             /*onQueryFolder();*/
@@ -611,17 +730,85 @@ public class Filemanager extends AppCompatActivity {
 
     }*/
 
-    public void onDelete(){
+    public void onDelete(int i){
+        final GlobalClass globaldata = (GlobalClass) getApplicationContext();
+        String fileset = globaldata.getFileList().get(i).getFilename();
+        if(FolderDelete == 0) {
+            riversRe = storage.child(globaldata.userid + "/" + fileset);
+            Toast.makeText(this, "" + riversRe.toString(), Toast.LENGTH_SHORT).show();
+            globaldata.getFileList().remove(i);
+            riversRe.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+                    String Username = globaldata.getList().get(0).getUsername();
+                    String Password = globaldata.getList().get(0).getPassword();
+                    db.child("user").child(globaldata.userid).setValue(new User(Username, Password, globaldata.getFileList()));
+                    Toast.makeText(Filemanager.this, "Delete Success", Toast.LENGTH_SHORT).show();
+                    Foldercount = 0;
+                    Queryfilecount();
+                }
+            });
+        }
+        else {
+            ArrayList<String> deletefile = new ArrayList<>();
+            FolderDelete = 0;
+            String localspit[] = fileset.split("/");
+            String localafter = "";
+            deletechecker = 0;
+            for(int s = 0 ; s < (localspit.length-1) ; s++){
+                localafter = localafter+localspit[s]+"/";
+            }
+            for (int f = 0; f < globaldata.getFileList().size() ; f++){
+                String spittest[] = globaldata.getFileList().get(f).getFilename().split(localafter);
+                String testtest = "";
+
+                if(spittest.length > 1){
+                    deletefile.add(globaldata.getFileList().get(f).getFilename());
+                    globaldata.getFileList().remove(f);
+                    f--;
+                }
+            }
+
+            for (String s : deletefile){
+                riversRe = storage.child(globaldata.userid + "/" + s);
+                Toast.makeText(Filemanager.this, ""+riversRe.toString(), Toast.LENGTH_SHORT).show();
+                riversRe.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        deletechecker = 1;
+                    }
+                });
+            }
+
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if(deletechecker == 1) {
+                        Toast.makeText(Filemanager.this, "" + deletechecker, Toast.LENGTH_SHORT).show();
+                        String Username = globaldata.getList().get(0).getUsername();
+                        String Password = globaldata.getList().get(0).getPassword();
+                        db.child("user").child(globaldata.userid).setValue(new User(Username, Password, globaldata.getFileList()));
+                        Toast.makeText(Filemanager.this, "Delete Success", Toast.LENGTH_SHORT).show();
+                        Foldercount = 0;
+                        Queryfilecount();
+                    }
+                }
+            }, 2000);
+
+
+
+        }
 
     }
-    public void onRename(){
+    public void onRename(int i){
 
     }
-    public void onMove(){
+    public void onMove(int i){
 
     }
 
-    public void onCopy(){
+    public void onCopy(int i){
 
     }
 }
