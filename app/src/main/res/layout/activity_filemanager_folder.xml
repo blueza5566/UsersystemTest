@@ -33,13 +33,13 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Upload"
-            android:onClick="onClickUpload"/>
+            android:text="Select Root"
+            android:onClick="onSelectRoot"/>
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="New Floder"
-            android:onClick="onFolder"/>
+            android:text="Cancel"
+            android:onClick="onCancel"/>
     </LinearLayout>
 
 

@@ -2,14 +2,12 @@ package com.example.sonicodetsu.usersystemtest;
 
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
@@ -17,8 +15,11 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -27,11 +28,6 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class FilemanagerFolder extends AppCompatActivity {
@@ -42,32 +38,52 @@ public class FilemanagerFolder extends AppCompatActivity {
     FirebaseStorage fbs;
     FirebaseDatabase fb;
     int round;
-    ArrayList<FileDetail> file;
     TableLayout tb;
     TableRow tr;
     LinearLayout layout2;
     int Folderupload = 0;
-    String Foldername;
-    int i= 0;
-    int j= 0;
+    int FolderDoing = 0;
+    ArrayList<String> Foldername = new ArrayList<>();
+    int Foldercount = 0;
+    int k= 0;
+    int r= 0;
+    FirebaseAuth mAuth;
+    Intent intent;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_filemanager_folder);
-        Intent intent = getIntent();
+        intent = getIntent();
+        final GlobalClass globaldata = (GlobalClass) getApplicationContext();
         tb = (TableLayout) findViewById(R.id.filelist);
         fbs = fbs.getInstance();
         fb = fb.getInstance();
         db = fb.getReferenceFromUrl("https://project-final-dd369.firebaseio.com/");
         storage = fbs.getReferenceFromUrl("gs://project-final-dd369.appspot.com");
-        final GlobalClass globaldata = (GlobalClass) getApplicationContext();
+        String whatdo = intent.getStringExtra("do");
+        String filelo = intent.getStringExtra("filelo");
+        String id = intent.getStringExtra("fileid");
+        //Toast.makeText(this,id,Toast.LENGTH_SHORT).show();
+        intent.putExtra("fileid",id);
+        if(whatdo.equalsIgnoreCase("copy")){
+            setResult(101,intent);
+        }
+        else if (whatdo.equalsIgnoreCase("move")){
+            setResult(102,intent);
+        }
         globaldata.getFileList().removeAllElements();
         Queryfilecount();
+
+
     }
+
 
     public  void Queryfilecount(){
         final GlobalClass globaldata = (GlobalClass) getApplicationContext();
+        tb.removeAllViews();
+        globaldata.getFileList().removeAllElements();
         round = 0;
         Query query =db.child("user").child(globaldata.getUserid()).child("fileDetails").orderByKey();
         query.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -85,7 +101,6 @@ public class FilemanagerFolder extends AppCompatActivity {
             }
         });
     }
-
 
     public void getfilelist(){
         final GlobalClass globaldata = (GlobalClass) getApplicationContext();
@@ -126,290 +141,183 @@ public class FilemanagerFolder extends AppCompatActivity {
     }
 
     public void showFile(){
+        k = 0;
         final GlobalClass globaldata = (GlobalClass) getApplicationContext();
         tr = new TableRow(this);
         tr.setPadding(5,5,5,5);
         tb.addView(tr);
         String fdtest = "";
+        int s0 = 0,s1 = 1,s2 = 2,ff = Foldercount;
+        if(Foldercount > 0 ){
+            Folderupload = 1;
+            LinearLayout layout3 = new LinearLayout(this);
+            TextView b = new TextView(this);
+            ImageView b2 = new ImageView(this);
+            b2.setImageResource(R.drawable.back);
+            b2.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Foldername.remove(Foldercount-1);
+                    Foldercount--;
+                    Queryfilecount();
+
+                }
+            });
+            tr.addView(layout3);
+            layout3.addView(b2);
+            layout3.addView(b);
+        }
+
+
+
+        ArrayList<String> Folderlist = new ArrayList<>();
+        ArrayList<String> Folderlist2 = new ArrayList<>();
         for (FileDetail f : globaldata.getFileList()){
             layout2 = new LinearLayout(this);
-            ImageView img = new ImageView(this);
+            final ImageView img = new ImageView(this);
             TextView filename = new TextView(this);
             layout2.setOrientation(LinearLayout.VERTICAL);
             String testfile [] = f.getFilename().split("/");
-            if(testfile.length > 1  && !testfile[0].equals(fdtest)){
-                filename.setText(testfile[0]);
-                fdtest = testfile[0];
-                img.setImageResource(R.drawable.folder);
-                img.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        j = i;
+            String testfile2 [] = f.getFilename().split("\\.");
+            String testfile3 = "";
+            img.setId(k);
+            boolean checksame = true;
+            if(Foldercount > 0 && testfile.length > 2){
+                Folderlist2.add(testfile[ff]);
+                int check = 0;
+                if(Folderlist2.size() > 1){
+                    for(int p = 0 ; p < Folderlist2.size();p++){
+                        if(Folderlist2.get(p).equalsIgnoreCase(testfile[ff])){
+                            check++;
+                        }
                     }
-                });
-                img.setOnLongClickListener(new View.OnLongClickListener() {
-                    @Override
-                    public boolean onLongClick(View v) {
-                        j = i;
-                        final String selector [] = {"open","delete"};
-                        AlertDialog.Builder builder = new AlertDialog.Builder(FilemanagerFolder.this);
-                        builder.setTitle("Select Favorite Team");
-                        builder.setItems(selector, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                String selected = selector[which];
-                                /*Toast.makeText(getApplicationContext(), "" +selected, Toast.LENGTH_SHORT).show();*/
-                            }
-                        });
-                        builder.setNegativeButton("cancle", null);
-                        builder.create();
-                        builder.show();
-                        return false;
+                    if(check > 1){
+                        checksame = false;
+                        Folderlist2.remove(Folderlist2.size()-1);
                     }
-                });
+                }
+            }
+            else if(Foldercount == 0 && testfile.length > 1) {
+                Folderlist.add(testfile[0]);
+                int check = 0;
+                if(Folderlist.size() > 1){
+                    for(int p = 0 ; p < Folderlist.size();p++){
+                        if(Folderlist.get(p).equalsIgnoreCase(testfile[0])){
+                            check++;
+                        }
+                    }
+                    if(check > 1){
+                        checksame = false;
+                        Folderlist.remove(Folderlist.size()-1);
+                    }
+                }
+            }
+
+            if(Foldercount > 0){
+                testfile3 = Foldername.get(Foldercount-1);
+                if(testfile.length == (s2 + ff)  && !testfile[(s0+ff)].equals(fdtest)&& Foldercount == (s0+ff) && testfile[ff-1].equalsIgnoreCase(testfile3) && checksame != false){
+                    filename.setText(testfile[(s0+ff)]);
+                    fdtest = testfile[(s0+ff)];
+                    img.setImageResource(R.drawable.folder);
+                    img.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            int i = img.getId();
+                            onOpen(i);
+                        }
+                    });
+                    img.setOnLongClickListener(new View.OnLongClickListener() {
+                        @Override
+                        public boolean onLongClick(View v) {
+                            final String selector [] = {"Open","Select"};
+                            AlertDialog.Builder builder = new AlertDialog.Builder(FilemanagerFolder.this);
+                            builder.setTitle("Select what to Do");
+                            builder.setItems(selector, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    int i = img.getId();
+                                    switch (which){
+                                    case 0: onOpen(i);break;
+                                    case 1: intent.putExtra("uploadlo",globaldata.getFileList().get(i).getFilename());finish();break;
+                                    }
+
+                                }
+                            });
+                            builder.setNegativeButton("cancel", null);
+                            builder.create();
+                            builder.show();
+                            return false;
+                        }
+                    });
+                }
             }
             else {
-                String filetype [] = testfile[testfile.length-1].split("\\.");
-                Toast.makeText(this,""+filetype[1],Toast.LENGTH_SHORT).show();
-                filename.setText(f.getFilename());
-                img.setImageResource(R.drawable.file);
-                img.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
+                if (testfile.length == (s2 + ff) && !testfile[(s0 + ff)].equals(fdtest) && Foldercount == (s0 + ff) && checksame != false) {
+                    filename.setText(testfile[(s0 + ff)]);
+                    fdtest = testfile[(s0 + ff)];
+                    img.setImageResource(R.drawable.folder);
+                    img.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            int i = img.getId();
+                            onOpen(i);
+                        }
+                    });
+                    img.setOnLongClickListener(new View.OnLongClickListener() {
+                        @Override
+                        public boolean onLongClick(View v) {
+                            final String selector [] = {"Open","Select"};
+                            AlertDialog.Builder builder = new AlertDialog.Builder(FilemanagerFolder.this);
+                            builder.setTitle("Select what to Do");
+                            builder.setItems(selector, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    int i = img.getId();
+                                    FolderDoing = 1;
+                                    switch (which) {
+                                        case 0: onOpen(i);break;
+                                        case 1: intent.putExtra("uploadlo",globaldata.getFileList().get(i).getFilename());finish();break;
+                                    }
 
-                    }
-                });
-                img.setOnLongClickListener(new View.OnLongClickListener() {
-                    @Override
-                    public boolean onLongClick(View v) {
-                        final String selector [] = {"open","delete"};
-                        AlertDialog.Builder builder = new AlertDialog.Builder(FilemanagerFolder.this);
-                        builder.setTitle("Select Favorite Team");
-                        builder.setItems(selector, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                String selected = selector[which];
-                                /*Toast.makeText(getApplicationContext(), "" +selected, Toast.LENGTH_SHORT).show();*/
-                            }
-                        });
-                        builder.setNegativeButton("cancle", null);
-                        builder.create();
-                        builder.show();
-                        return false;
-                    }
-                });
+                                }
+                            });
+                            builder.setNegativeButton("cancel", null);
+                            builder.create();
+                            builder.show();
+                            return false;
+                        }
+                    });
+                }
             }
-            filename.setId(i);
+
             tr.addView(layout2);
             layout2.addView(img);
             layout2.addView(filename);
-            i++;
+            k++;
         }
 
     }
 
-/*    @Override
-    protected void onResume() {
-        super.onResume();
+    public  void  onSelectRoot(View view){
+        intent.putExtra("uploadlo","");
+        finish();
+    }
+
+    public  void  onCancel(View view){
+        finish();
+    }
+
+    public void onOpen(int i){
         final GlobalClass globaldata = (GlobalClass) getApplicationContext();
-        tb.removeAllViews();
-        globaldata.getFileList().removeAllElements();
-        getfilelist();
-    }*/
-
-    public void onClickUpload(View view){
-        Folderupload = 0;
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("file*//*");
-        startActivityForResult(Intent.createChooser(intent,"Select File"),0);
-        Query query = db.orderByKey().startAt("1001");
-        query.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                int a = 1001;
-                for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                    a++;
-                }
-                //db.child("" + a).setValue(file);
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-    }
-
-    public void onFolder(View view){
-        final GlobalClass globaldata = (GlobalClass) getApplicationContext();
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("You Must Select File After Enter Folder Name");
-        builder.setMessage("Enter Folder Name");
-        final EditText fname = new EditText(this);
-        builder.setView(fname);
-        builder.setPositiveButton("Select File", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Foldername = fname.getText().toString();
-                Folderupload = 1;
-                Query query = db.orderByKey().startAt("1001");
-                query.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        int a = 1001;
-                        for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                            a++;
-                        }
-                        File file = new File("");
-                        Uri selectedUri_File = Uri.fromFile(file);
-                        try {
-                            String toWrite = "Hello";
-                            File myfile = File.createTempFile("test", ".tmp");
-                            FileWriter writer = new FileWriter(myfile);
-                            writer.write(toWrite);
-                            writer.close();
-                            selectedUri_File = Uri.fromFile(myfile);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-
-                        //Toast.makeText(this,Selectedfile,Toast.LENGTH_SHORT).show();
-                        StorageReference riversRef = storage.child(globaldata.getUserid()+"/"+fname.getText().toString()+"/new.txt");
-                        riversRef.putFile(selectedUri_File).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                            @Override
-                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                                @SuppressWarnings("VisibleForTests") Uri downloadUrl = taskSnapshot.getDownloadUrl();
-                                //Toast.makeText(Filemanager.this,"555 "+downloadUrl.toString(),Toast.LENGTH_SHORT).show();
-                                File filelo = new File(downloadUrl.getLastPathSegment().toString());
-                                String filename = filelo.getName();
-                                //file = new FileTest(filename,downloadUrl.toString());
-                                globaldata.getFileList().add(new FileDetail(fname.getText().toString()+"/",""));
-                                String Username = globaldata.getList().get(0).getUsername();
-                                String Password = globaldata.getList().get(0).getPassword();
-                                db.child("user").child(globaldata.userid).setValue(new User(Username,Password,globaldata.getFileList()));
-                                Intent intent = new Intent(FilemanagerFolder.this,Filemanager.class);
-                                startActivity(intent);
-                                finish();
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
-            }
-        });
-        builder.setNegativeButton("Cancle", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-            }
-        });
-        builder.show();
-
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        final GlobalClass globaldata = (GlobalClass) getApplicationContext();
-        if(resultCode == RESULT_OK){
-            if(requestCode == 0 && Folderupload == 0){
-                Uri selectedUri_File = data.getData();
-                File myfile = new File(selectedUri_File.toString());
-                String Selectedfile = myfile.getAbsolutePath();
-                //Toast.makeText(this,Selectedfile,Toast.LENGTH_SHORT).show();
-                StorageReference riversRef = storage.child(globaldata.userid+"/"+myfile.getName());
-                riversRef.putFile(selectedUri_File).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        @SuppressWarnings("VisibleForTests") Uri downloadUrl = taskSnapshot.getDownloadUrl();
-                        //Toast.makeText(Filemanager.this,"555 "+downloadUrl.toString(),Toast.LENGTH_SHORT).show();
-                        File filelo = new File(downloadUrl.getLastPathSegment().toString());
-                        String filename = filelo.getName();
-                        //file = new FileTest(filename,downloadUrl.toString());
-                        globaldata.getFileList().add(new FileDetail(filename,downloadUrl.toString()));
-                        String Username = globaldata.getList().get(0).getUsername();
-                        String Password = globaldata.getList().get(0).getPassword();
-                        db.child("user").child(globaldata.userid).setValue(new User(Username,Password,globaldata.getFileList()));
-                        Intent intent = new Intent(FilemanagerFolder.this,Filemanager.class);
-                        startActivity(intent);
-                        finish();
-                    }
-                })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(FilemanagerFolder.this,"Error",Toast.LENGTH_SHORT).show();
-                            }
-                        });
-            }
-            else {
-                Uri selectedUri_File = data.getData();
-                File myfile = new File(selectedUri_File.toString());
-                String Selectedfile = myfile.getAbsolutePath();
-                //Toast.makeText(this,Selectedfile,Toast.LENGTH_SHORT).show();
-                StorageReference riversRef = storage.child(globaldata.userid+"/"+Foldername+"/"+myfile.getName());
-                riversRef.putFile(selectedUri_File).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        @SuppressWarnings("VisibleForTests") Uri downloadUrl = taskSnapshot.getDownloadUrl();
-                        //Toast.makeText(Filemanager.this,"555 "+downloadUrl.toString(),Toast.LENGTH_SHORT).show();
-                        File filelo = new File(downloadUrl.getLastPathSegment().toString());
-                        String filename = filelo.getName();
-                        //file = new FileTest(filename,downloadUrl.toString());
-                        globaldata.getFileList().add(new FileDetail(Foldername+"/"+filename,downloadUrl.toString()));
-                        String Username = globaldata.getList().get(0).getUsername();
-                        String Password = globaldata.getList().get(0).getPassword();
-                        db.child("user").child(globaldata.userid).setValue(new User(Username,Password,globaldata.getFileList()));
-                        Intent intent = new Intent(FilemanagerFolder.this,Filemanager.class);
-                        startActivity(intent);
-                        finish();
-                    }
-                })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(FilemanagerFolder.this,"Error",Toast.LENGTH_SHORT).show();
-                            }
-                        });
-
-            }
+        final String name = globaldata.getFileList().get(i).getFilename();
+        //Toast.makeText(this,name,Toast.LENGTH_SHORT).show();
+        String testfile [] = name.split("/");
+        if(testfile.length > 1){
+            Foldername.add(testfile [0+Foldercount]);
+            Foldercount++;
+            Queryfilecount();
+            /*onQueryFolder();*/
         }
-    }
-
-    public void onCreateFolder(){
-                /*final Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        StorageReference riversRef2 = storage.child(globaldata.getUserid()+"/"+fname.getText().toString()+"/new.txt");
-                        riversRef2.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
-                            @Override
-                            public void onSuccess(Void aVoid) {
-                                Toast.makeText(Filemanager.this,"Success",Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                }, 2000);*/
-
-    }
-
-    public void onOpen(){
-        TextView choice = (TextView)findViewById(j);
-        String name = choice.getText().toString();
-        String filetype [] = name.split("\\.");
-        if(filetype.length == 1){
-            Intent intent = new Intent();
-            startActivity(intent);
-        }
-        else {
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            startActivity(intent);
-        }
-
     }
 
 }

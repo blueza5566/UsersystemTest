@@ -74,6 +74,7 @@ public class Filemanager extends AppCompatActivity {
     String newFolder = "";
     int k= 0;
     int r= 0;
+    int fileid = 0;
     FirebaseAuth mAuth;
     String Folderlo;
     StorageReference riversRe;
@@ -82,6 +83,7 @@ public class Filemanager extends AppCompatActivity {
     int deletechecker;
     IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
     String fileuploadname = "" ;
+    String localafter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,14 +98,14 @@ public class Filemanager extends AppCompatActivity {
         globaldata.getFileList().removeAllElements();
         Queryfilecount();
 
-        mAuth = FirebaseAuth.getInstance();
+/*        mAuth = FirebaseAuth.getInstance();
         FirebaseUser user = mAuth.getCurrentUser();
         mAuth.signInWithEmailAndPassword("neptuniafs@gmail.com","blue5566").addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
                 Toast.makeText(Filemanager.this,"Success",Toast.LENGTH_SHORT).show();
             }
-        });
+        });*/
     }
 
 
@@ -207,13 +209,6 @@ public class Filemanager extends AppCompatActivity {
                     Foldername.remove(Foldercount-1);
                     Foldercount--;
                     Queryfilecount();
-                /* if(Foldercount == 0){
-                        Queryfilecount();
-                    }
-                    else {
-                        onQueryFolder();
-                    }*/
-
                 }
             });
             tr.addView(layout3);
@@ -221,7 +216,8 @@ public class Filemanager extends AppCompatActivity {
             layout3.addView(b);
         }
 
-
+        ArrayList<String> Folderlist = new ArrayList<>();
+        ArrayList<String> Folderlist2 = new ArrayList<>();
         for (FileDetail f : globaldata.getFileList()){
             layout2 = new LinearLayout(this);
             final ImageView img = new ImageView(this);
@@ -230,10 +226,48 @@ public class Filemanager extends AppCompatActivity {
             String testfile [] = f.getFilename().split("/");
             String testfile2 [] = f.getFilename().split("\\.");
             String testfile3 = "";
+
             img.setId(k);
+            boolean checksame = true;
+            if(Foldercount > 0 && testfile.length > 2){
+                testfile3 = Foldername.get(Foldercount-1);
+                if(testfile[ff-1].equalsIgnoreCase(testfile3)){
+                   Folderlist2.add(testfile[ff]);
+               }
+                int check = 0;
+                if(Folderlist2.size() > 1){
+                    for(int p = 0 ; p < Folderlist2.size();p++){
+                        if(Folderlist2.get(p).equalsIgnoreCase(testfile[ff])){
+                            check++;
+                        }
+                    }
+                    if(check > 1){
+                        checksame = false;
+                        Folderlist2.remove(Folderlist2.size()-1);
+                    }
+                }
+            }
+            else if(Foldercount == 0 && testfile.length > 1) {
+                Folderlist.add(testfile[0]);
+                int check = 0;
+                if(Folderlist.size() > 1){
+                    for(int p = 0 ; p < Folderlist.size();p++){
+                        if(Folderlist.get(p).equalsIgnoreCase(testfile[0])){
+                            check++;
+                        }
+                    }
+                    if(check > 1){
+                        checksame = false;
+                        Folderlist.remove(Folderlist.size()-1);
+                    }
+                }
+            }
+
+            //Toast.makeText(this,""+checksame,Toast.LENGTH_SHORT).show();
             if(Foldercount > 0){
                 testfile3 = Foldername.get(Foldercount-1);
-                if(testfile.length == (s2 + ff)  && !testfile[(s0+ff)].equals(fdtest)&& Foldercount == (s0+ff) && testfile[ff-1].equalsIgnoreCase(testfile3)){
+               // Toast.makeText(this,testfile3 +"  " +testfile[ff-1],Toast.LENGTH_SHORT).show();
+                if(testfile.length == (s2 + ff)  && !testfile[(s0+ff)].equals(fdtest)&& Foldercount == (s0+ff) && testfile[ff-1].equalsIgnoreCase(testfile3) && checksame != false){
                     filename.setText(testfile[(s0+ff)]);
                     fdtest = testfile[(s0+ff)];
                     img.setImageResource(R.drawable.folder);
@@ -317,7 +351,7 @@ public class Filemanager extends AppCompatActivity {
                 }
             }
             else {
-                if (testfile.length == (s2 + ff) && !testfile[(s0 + ff)].equals(fdtest) && Foldercount == (s0 + ff)) {
+                if (testfile.length == (s2 + ff) && !testfile[(s0 + ff)].equals(fdtest) && Foldercount == (s0 + ff) && checksame != false) {
                     filename.setText(testfile[(s0 + ff)]);
                     fdtest = testfile[(s0 + ff)];
                     img.setImageResource(R.drawable.folder);
@@ -559,7 +593,230 @@ public class Filemanager extends AppCompatActivity {
         for(String s : Foldername){
             Folderlo = Folderlo + s+"/";
         }
-        if(resultCode == RESULT_OK){
+        if(resultCode == 101){
+            String test = data.getStringExtra("filelo");
+            String test2 = data.getStringExtra("uploadlo");
+            fileid = Integer.parseInt(data.getStringExtra("fileid"));
+            String filename[] = test.split("/");
+            final String  fileupload =  filename[filename.length-1];
+            final int checkfo = filename.length;
+            String uploadlocal[] = test2.split("/");
+            localafter = "";
+            for(int s = 0 ; s < (uploadlocal.length-1) ; s++){
+                    localafter = localafter+uploadlocal[s]+"/";
+            }
+            //Toast.makeText(this,"Copy  :  "+test + "  to  : " + localafter+" id in list  :  " + fileid,Toast.LENGTH_SHORT).show();
+            if(FolderDoing == 0) {
+                final String uploadName = test;
+                riversRe = storage.child(globaldata.userid + "/" + uploadName);
+                riversRe2 = storage.child(globaldata.userid + "/" + localafter);
+                final String filetype [] = uploadName.split("\\.");
+                try {
+                            final File downloadfile = File.createTempFile("download","."+filetype[1]);
+                            riversRe.getFile(downloadfile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                            if(checkfo  > 1){
+                                riversRe3 = storage.child(globaldata.userid+"/"+localafter+fileupload );
+                            }
+                            else{
+                                riversRe3 = storage.child(globaldata.userid+"/"+ uploadName);
+                            }
+                            //riversRe3 = storage.child(globaldata.userid+"/"+localafter+ uploadName);
+                            Toast.makeText(Filemanager.this,riversRe3.toString(),Toast.LENGTH_SHORT).show();
+                            // fileuploadname = nameafter;
+                            riversRe3.putFile(Uri.fromFile(downloadfile)).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                                @Override
+                                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                    @SuppressWarnings("VisibleForTests") Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                                    File filelo = new File(downloadUrl.getLastPathSegment().toString());
+                                    if(checkfo  > 1){
+                                        globaldata.getFileList().add(new FileDetail(localafter+fileupload,downloadUrl.toString()));
+                                    }
+                                    else{
+                                        globaldata.getFileList().add(new FileDetail(uploadName,downloadUrl.toString()));
+                                    }
+                                    String Username = globaldata.getList().get(0).getUsername();
+                                    String Password = globaldata.getList().get(0).getPassword();
+                                    db.child("user").child(globaldata.userid).setValue(new User(Username,Password,globaldata.getFileList()));
+                                    Toast.makeText(Filemanager.this, "Copy Success", Toast.LENGTH_SHORT).show();
+                                    Intent intent = new Intent(Filemanager.this,Filemanager.class);
+                                    startActivity(intent);
+                                    finish();
+                                   // globaldata.getFileList().remove(id);
+/*                                     riversRe.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                        @Override
+                                        public void onSuccess(Void aVoid) {
+                                            String Username = globaldata.getList().get(0).getUsername();
+                                            String Password = globaldata.getList().get(0).getPassword();
+                                            db.child("user").child(globaldata.userid).setValue(new User(Username,Password,globaldata.getFileList()));
+                                            Toast.makeText(Filemanager.this, "Rename Success", Toast.LENGTH_SHORT).show();
+                                            Intent intent = new Intent(Filemanager.this,Filemanager.class);
+                                            startActivity(intent);
+                                            finish();
+                                        }
+                                    });*/
+                                }
+                            });
+
+                        }
+                    });
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            else {
+                FolderDoing = 0;
+                final String uploadName = filename[filename.length-1];
+                final String uploadlo = test;
+                String uploadFolder [] = uploadlo.split("/");
+                String uploadFolderafter = "";
+                final ArrayList<String> copyfolder = new ArrayList<>();
+                //final ArrayList<String> copydatabaseinsert = new ArrayList<>();
+                final ArrayList<Integer> rememberfolder = new ArrayList<Integer>();
+                for(int s = 0 ; s < uploadFolder.length-1; s++){
+                    uploadFolderafter = uploadFolderafter+uploadFolder[s]+"/";
+                }
+                final String uploaded = uploadFolderafter;
+
+                for (int f = 0; f < globaldata.getFileList().size() ; f++){
+                    String spittest[] = globaldata.getFileList().get(f).getFilename().split(uploadFolderafter);
+                    String testtest = "";
+                    if(spittest.length > 1){
+                        rememberfolder.add(f);
+                        copyfolder.add(globaldata.getFileList().get(f).getFilename());
+                        Toast.makeText(this,globaldata.getFileList().get(f).getFilename(),Toast.LENGTH_SHORT).show();
+                        //globaldata.getFileList().remove(f);
+                        // f--;
+                    }
+                }
+
+                for (int c = 0 ; c < copyfolder.size();c++ ){
+                    final int u = c;
+                    riversRe = storage.child(globaldata.userid + "/" + copyfolder.get(c));
+                    final String filetype [] = copyfolder.get(c).split("\\.");
+                    final String spintfilename [] = copyfolder.get(c).split("/");
+                    final String finalfilename = spintfilename[spintfilename.length-1];
+                    String copydatabaseinsert = "";
+                    for(int s = Foldercount ; s < spintfilename.length-1; s++){
+                        copydatabaseinsert  = copydatabaseinsert +spintfilename[s]+"/";
+                    }
+                    final String savefolder = copydatabaseinsert;
+                    Toast.makeText(Filemanager.this,""+copydatabaseinsert,Toast.LENGTH_SHORT).show();
+                    try {
+                        final File downloadfile = File.createTempFile("download","."+filetype[filetype.length-1]);
+                        riversRe.getFile(downloadfile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                riversRe3 = storage.child(globaldata.userid+"/"+localafter + savefolder + finalfilename );
+                                //Toast.makeText(Filemanager.this,""+riversRe3.toString(),Toast.LENGTH_SHORT).show();
+                                riversRe3.putFile(Uri.fromFile(downloadfile)).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                                    @Override
+                                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                        @SuppressWarnings("VisibleForTests") Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                                        File filelo = new File(downloadUrl.getLastPathSegment().toString());
+                                        globaldata.getFileList().add(new FileDetail(localafter + savefolder + finalfilename,downloadUrl.toString()));
+                                        String Username = globaldata.getList().get(0).getUsername();
+                                        String Password = globaldata.getList().get(0).getPassword();
+                                        db.child("user").child(globaldata.userid).setValue(new User(Username,Password,globaldata.getFileList()));
+                                        Toast.makeText(Filemanager.this, "Copy Success", Toast.LENGTH_SHORT).show();
+                                        Intent intent = new Intent(Filemanager.this,Filemanager.class);
+                                        startActivity(intent);
+                                        finish();
+                                        /*riversRe.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                        @Override
+                                        public void onSuccess(Void aVoid) {
+                                            String Username = globaldata.getList().get(0).getUsername();
+                                            String Password = globaldata.getList().get(0).getPassword();
+                                            db.child("user").child(globaldata.userid).setValue(new User(Username,Password,globaldata.getFileList()));
+                                            Toast.makeText(Filemanager.this, "Rename Success", Toast.LENGTH_SHORT).show();
+                                            Intent intent = new Intent(Filemanager.this,Filemanager.class);
+                                            startActivity(intent);
+                                            finish();
+                                        }
+                                    });*/
+                                    }
+                                });
+
+                            }
+                        });
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+               // Toast.makeText(this,uploadFolderafter,Toast.LENGTH_SHORT).show();
+                //riversRe = storage.child(globaldata.userid + "/" + uploadName);
+                //riversRe2 = storage.child(globaldata.userid + "/" + localafter);
+            }
+
+        }
+        else if(resultCode == 102){
+           // Toast.makeText(this,"Move  :  "+test + "  to  : " + test2,Toast.LENGTH_SHORT).show();
+            String test = data.getStringExtra("filelo");
+            String test2 = data.getStringExtra("uploadlo");
+            fileid = Integer.parseInt(data.getStringExtra("fileid"));
+
+            String uploadlocal[] = test2.split("/");
+            localafter = "";
+            for(int s = 0 ; s < (uploadlocal.length-1) ; s++){
+                localafter = localafter+uploadlocal[s]+"/";
+            }
+            //Toast.makeText(this,"Copy  :  "+test + "  to  : " + localafter+" id in list  :  " + fileid,Toast.LENGTH_SHORT).show();
+             /*if(FolderDoing == 0) {
+                final String uploadName = test;
+                riversRe = storage.child(globaldata.userid + "/" + uploadName);
+                riversRe2 = storage.child(globaldata.userid + "/" + localafter);
+                final String filetype [] = uploadName.split("\\.");
+                try {
+                    final File downloadfile = File.createTempFile("download","."+filetype[1]);
+                    riversRe.getFile(downloadfile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                            riversRe3 = storage.child(globaldata.userid+"/"+localafter+ uploadName);
+                            // fileuploadname = nameafter;
+                            riversRe3.putFile(Uri.fromFile(downloadfile)).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                                @Override
+                                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                    @SuppressWarnings("VisibleForTests") Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                                    File filelo = new File(downloadUrl.getLastPathSegment().toString());
+                                    //globaldata.getFileList().add(new FileDetail(localafter+ uploadName,downloadUrl.toString()));
+                                    globaldata.getFileList().get(fileid).setFilename(localafter+ uploadName);
+                                    globaldata.getFileList().get(fileid).setFilelocation(downloadUrl.toString());
+                                    String Username = globaldata.getList().get(0).getUsername();
+                                    String Password = globaldata.getList().get(0).getPassword();
+                                    db.child("user").child(globaldata.userid).setValue(new User(Username,Password,globaldata.getFileList()));
+                                    Toast.makeText(Filemanager.this, "Copy Success", Toast.LENGTH_SHORT).show();
+                                    Intent intent = new Intent(Filemanager.this,Filemanager.class);
+                                    startActivity(intent);
+                                    finish();
+                                    // globaldata.getFileList().remove(id);
+                                    riversRe.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                        @Override
+                                        public void onSuccess(Void aVoid) {
+                                            String Username = globaldata.getList().get(0).getUsername();
+                                            String Password = globaldata.getList().get(0).getPassword();
+                                            db.child("user").child(globaldata.userid).setValue(new User(Username,Password,globaldata.getFileList()));
+                                            Toast.makeText(Filemanager.this, "Rename Success", Toast.LENGTH_SHORT).show();
+                                            Intent intent = new Intent(Filemanager.this,Filemanager.class);
+                                            startActivity(intent);
+                                            finish();
+                                        }
+                                    });
+                                }
+                            });
+
+                        }
+                    });
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }*/
+        }
+        else if(resultCode == RESULT_OK){
             if(requestCode == 0 && Folderupload == 0){
                 Uri selectedUri_File = data.getData();
                 File myfile = new File(getFileName(selectedUri_File));
@@ -1080,13 +1337,23 @@ public class Filemanager extends AppCompatActivity {
     public void onMove(int i){
         final GlobalClass globaldata = (GlobalClass) getApplicationContext();
         String fileset = globaldata.getFileList().get(i).getFilename();
-
+        Intent intent = new Intent(this,FilemanagerFolder.class);
+        String id = ""+i;
+        intent.putExtra("filelo",fileset);
+        intent.putExtra("do","move");
+        intent.putExtra("fileid",id);
+        startActivityForResult(intent,102);
     }
 
     public void onCopy(int i){
         final GlobalClass globaldata = (GlobalClass) getApplicationContext();
         String fileset = globaldata.getFileList().get(i).getFilename();
-
+        Intent intent = new Intent(this,FilemanagerFolder.class);
+        String id = ""+i;
+        intent.putExtra("filelo",fileset);
+        intent.putExtra("do","copy");
+        intent.putExtra("fileid",id);
+        startActivityForResult(intent,101);
     }
 
     public void onShareFile(int i){
@@ -1094,4 +1361,5 @@ public class Filemanager extends AppCompatActivity {
         String fileset = globaldata.getFileList().get(i).getFilename();
 
     }
+
 }
