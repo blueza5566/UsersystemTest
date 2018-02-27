@@ -230,7 +230,7 @@ public class Filemanager extends AppCompatActivity {
 
             img.setId(k);
             boolean checksame = true;
-            if(Foldercount > 0 && testfile.length > 2){
+            if(Foldercount > (s0+ff) && testfile.length > (s2+ ff)){
                 testfile3 = Foldername.get(Foldercount-1);
                 if(testfile[ff-1].equalsIgnoreCase(testfile3)){
                    Folderlist2.add(testfile[ff]);
@@ -248,7 +248,7 @@ public class Filemanager extends AppCompatActivity {
                     }
                 }
             }
-            else if(Foldercount == 0 && testfile.length > 1) {
+            else if(Foldercount == (s0 +ff) && testfile.length == (s1+ff)) {
                 Folderlist.add(testfile[0]);
                 int check = 0;
                 if(Folderlist.size() > 1){
@@ -260,6 +260,7 @@ public class Filemanager extends AppCompatActivity {
                     if(check > 1){
                         checksame = false;
                         Folderlist.remove(Folderlist.size()-1);
+                        Toast.makeText(this,"Here :"+ testfile[0] +"  = " + check   ,Toast.LENGTH_SHORT).show();
                     }
                 }
             }
@@ -1058,14 +1059,12 @@ public class Filemanager extends AppCompatActivity {
                 public void onSuccess(Uri uri) {
                     DownloadManager.Request request = new DownloadManager.Request(uri);
                     registerReceiver(downloadReceive, filter);
+                    //Toast.makeText(Filemanager.this,testfile[testfile.length-1],Toast.LENGTH_SHORT).show();
                     request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,testfile[testfile.length-1]);
                     request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED); // to notify when download is complete
                     request.allowScanningByMediaScanner();// if you want to be available from media players
                     DownloadManager manager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
                     manager.enqueue(request);
-                 /*   Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setData(uri);
-                    startActivity(intent);*/
                 }
             });
 
@@ -1113,7 +1112,11 @@ public class Filemanager extends AppCompatActivity {
             Intent openAttachmentIntent = new Intent(Intent.ACTION_VIEW);
             openAttachmentIntent.setDataAndType(attachmentUri, attachmentMimeType);
             openAttachmentIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            context.startActivity(openAttachmentIntent);
+            try {
+                context.startActivity(openAttachmentIntent);
+            } catch (ActivityNotFoundException e) {
+                Toast.makeText(context, "Error", Toast.LENGTH_LONG).show();
+            }
         }
     }
 
